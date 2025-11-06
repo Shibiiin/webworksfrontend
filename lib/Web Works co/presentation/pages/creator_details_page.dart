@@ -4,6 +4,9 @@ import 'package:provider/provider.dart';
 import '../../domain/entities/creator.dart';
 import '../manager/dashboard_controller.dart';
 
+const String defaultImageUrl =
+    'https://i.ibb.co/6yvC2Q2/user-profile-icon-free-vector.jpg';
+
 class CreatorDetailPage extends StatefulWidget {
   final String creatorId;
 
@@ -235,6 +238,30 @@ class _CreatorDetailPageState extends State<CreatorDetailPage>
                                         child: Image.network(
                                           creator.profileImageUrl,
                                           fit: BoxFit.cover,
+                                          loadingBuilder:
+                                              (
+                                                context,
+                                                child,
+                                                loadingProgress,
+                                              ) {
+                                                if (loadingProgress == null)
+                                                  return child;
+                                                return const Center(
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                        color: Color(
+                                                          0xFF00D4AA,
+                                                        ),
+                                                      ),
+                                                );
+                                              },
+                                          errorBuilder:
+                                              (context, error, stackTrace) {
+                                                return Image.asset(
+                                                  'assets/images/default_avatar.jpg',
+                                                  fit: BoxFit.cover,
+                                                );
+                                              },
                                         ),
                                       ),
                                     ),

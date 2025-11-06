@@ -2,6 +2,7 @@
 
 import 'package:dio/dio.dart';
 import 'package:webworksco/Web%20Works%20co/data/remote/app_url.dart';
+import 'package:webworksco/Web%20Works%20co/presentation/widget/custom_print.dart';
 
 import '../../domain/entities/creator.dart';
 
@@ -25,6 +26,8 @@ class ApiService {
     try {
       final response = await _dio.get(AppRemotesRoutes.creators);
       final List<dynamic> data = response.data;
+      successPrint("Creators details Loaded ${data.length}");
+      successPrint("Creators details Loaded ${response.data}");
       return data.map((json) => Creator.fromMap(json)).toList();
     } on DioException catch (e) {
       print("Error fetching creators: $e");

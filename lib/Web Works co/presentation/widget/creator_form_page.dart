@@ -1,9 +1,15 @@
+// lib/presentation/widget/creator_form_page.dart
+
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:go_router/go_router.dart'; // Make sure this is imported
 import 'package:provider/provider.dart';
 
 import '../../domain/entities/creator.dart';
 import '../manager/dashboard_controller.dart';
+
+// The new default image URL
+const String defaultImageUrl =
+    'https://i.ibb.co/6yvC2Q2/user-profile-icon-free-vector.jpg';
 
 class CreatorFormPage extends StatefulWidget {
   final Creator? creator;
@@ -16,6 +22,7 @@ class CreatorFormPage extends StatefulWidget {
 
 class _CreatorFormPageState extends State<CreatorFormPage>
     with SingleTickerProviderStateMixin {
+  // ... your existing state variables and controllers (_formKey, _nameController, etc.) ...
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -35,6 +42,7 @@ class _CreatorFormPageState extends State<CreatorFormPage>
   @override
   void initState() {
     super.initState();
+    // ... your initState code is perfect, no changes needed ...
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -71,6 +79,7 @@ class _CreatorFormPageState extends State<CreatorFormPage>
 
   @override
   void dispose() {
+    // ... your dispose code is perfect, no changes needed ...
     _animationController.dispose();
     _nameController.dispose();
     _designationController.dispose();
@@ -104,7 +113,10 @@ class _CreatorFormPageState extends State<CreatorFormPage>
         name: _nameController.text.trim(),
         designation: _designationController.text.trim(),
         about: _aboutController.text.trim(),
-        profileImageUrl: _profileImageController.text.trim(),
+        // ✅ UPDATED: Use the defaultImageUrl if the input is empty
+        profileImageUrl: _profileImageController.text.trim().isEmpty
+            ? defaultImageUrl
+            : _profileImageController.text.trim(),
         portfolioImageUrls: widget.creator?.portfolioImageUrls ?? [],
         email: _emailController.text.trim(),
         location: _locationController.text.trim(),
@@ -132,8 +144,8 @@ class _CreatorFormPageState extends State<CreatorFormPage>
       }
 
       if (success && mounted) {
+        // Use go_router to navigate back to the list page
         context.go('/');
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.green,
@@ -150,13 +162,15 @@ class _CreatorFormPageState extends State<CreatorFormPage>
           const SnackBar(
             backgroundColor: Colors.red,
             content: Text('Failed to save creator'),
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
           ),
         );
       }
     }
   }
 
+  // ... THE REST OF YOUR UI BUILD METHODS ARE PERFECT, NO CHANGES NEEDED ...
+  // (_buildTextField, _buildStatusDropdown, etc.)
   @override
   Widget build(BuildContext context) {
     return Scaffold(

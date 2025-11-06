@@ -1,7 +1,13 @@
+// lib/presentation/widget/creator_widget.dart
+
 import 'package:flutter/material.dart';
 
 import '../../domain/entities/creator.dart';
 import '../pages/creator_details_page.dart';
+
+// The same default image URL
+const String defaultImageUrl =
+    'https://i.ibb.co/6yvC2Q2/user-profile-icon-free-vector.jpg';
 
 class CreatorCard extends StatelessWidget {
   final Creator creator;
@@ -52,7 +58,6 @@ class CreatorCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Hero Animation for Profile Image
                     Hero(
                       tag: 'profile_image_${creator.id}',
                       child: AspectRatio(
@@ -69,27 +74,25 @@ class CreatorCard extends StatelessWidget {
                               if (loadingProgress == null) return child;
                               return Container(
                                 color: Colors.grey[900],
-                                child: Center(
+                                child: const Center(
                                   child: CircularProgressIndicator(
-                                    value:
-                                        loadingProgress.expectedTotalBytes !=
-                                            null
-                                        ? loadingProgress
-                                                  .cumulativeBytesLoaded /
-                                              loadingProgress
-                                                  .expectedTotalBytes!
-                                        : null,
-                                    color: const Color(0xFF00D4AA),
+                                    color: Color(0xFF00D4AA),
                                   ),
                                 ),
+                              );
+                            },
+                            // ✅ ADDED: Error builder to show the default image on failure
+                            errorBuilder: (context, error, stackTrace) {
+                              return Image.network(
+                                defaultImageUrl,
+                                fit: BoxFit.cover,
                               );
                             },
                           ),
                         ),
                       ),
                     ),
-
-                    // Content
+                    // ... THE REST OF YOUR CARD CONTENT IS PERFECT ...
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
@@ -149,8 +152,7 @@ class CreatorCard extends StatelessWidget {
                   ],
                 ),
               ),
-
-              // Edit/Delete buttons
+              // ... YOUR POPUPMENUBUTTON IS PERFECT ...
               Positioned(
                 top: 8,
                 right: 8,
