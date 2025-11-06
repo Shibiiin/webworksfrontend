@@ -8,8 +8,7 @@ import '../../domain/entities/creator.dart';
 import '../manager/dashboard_controller.dart';
 
 // The new default image URL
-const String defaultImageUrl =
-    'https://i.ibb.co/6yvC2Q2/user-profile-icon-free-vector.jpg';
+const String defaultImageUrl = 'assets/img/person.png';
 
 class CreatorFormPage extends StatefulWidget {
   final Creator? creator;
@@ -42,19 +41,16 @@ class _CreatorFormPageState extends State<CreatorFormPage>
   @override
   void initState() {
     super.initState();
-    // ... your initState code is perfect, no changes needed ...
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
         curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
       ),
     );
-
     _slideAnimation =
         Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
           CurvedAnimation(
@@ -73,13 +69,11 @@ class _CreatorFormPageState extends State<CreatorFormPage>
       _status = widget.creator!.status;
       _skills.addAll(widget.creator!.skills);
     }
-
     _animationController.forward();
   }
 
   @override
   void dispose() {
-    // ... your dispose code is perfect, no changes needed ...
     _animationController.dispose();
     _nameController.dispose();
     _designationController.dispose();
@@ -108,15 +102,13 @@ class _CreatorFormPageState extends State<CreatorFormPage>
 
   Future<void> _saveCreator() async {
     if (_formKey.currentState!.validate()) {
-      final creator = Creator(
+      final creatorData = Creator(
         id: widget.creator?.id ?? '',
         name: _nameController.text.trim(),
         designation: _designationController.text.trim(),
         about: _aboutController.text.trim(),
-        // ✅ UPDATED: Use the defaultImageUrl if the input is empty
-        profileImageUrl: _profileImageController.text.trim().isEmpty
-            ? defaultImageUrl
-            : _profileImageController.text.trim(),
+        profileImageUrl: _profileImageController.text
+            .trim(), // Save empty string if no URL
         portfolioImageUrls: widget.creator?.portfolioImageUrls ?? [],
         email: _emailController.text.trim(),
         location: _locationController.text.trim(),
@@ -134,17 +126,13 @@ class _CreatorFormPageState extends State<CreatorFormPage>
         listen: false,
       );
       bool success;
-
       if (widget.creator == null) {
-        success = await viewModel.addCreator(creator);
+        success = await viewModel.addCreator(creatorData);
       } else {
-        success = await viewModel.updateCreator(
-          creator.copyWith(id: widget.creator!.id),
-        );
+        success = await viewModel.updateCreator(creatorData);
       }
 
       if (success && mounted) {
-        // Use go_router to navigate back to the list page
         context.go('/');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -162,15 +150,13 @@ class _CreatorFormPageState extends State<CreatorFormPage>
           const SnackBar(
             backgroundColor: Colors.red,
             content: Text('Failed to save creator'),
-            duration: const Duration(seconds: 2),
+            duration: Duration(seconds: 2),
           ),
         );
       }
     }
   }
 
-  // ... THE REST OF YOUR UI BUILD METHODS ARE PERFECT, NO CHANGES NEEDED ...
-  // (_buildTextField, _buildStatusDropdown, etc.)
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -184,7 +170,7 @@ class _CreatorFormPageState extends State<CreatorFormPage>
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.pop(),
         ),
         actions: [
           IconButton(
@@ -195,12 +181,10 @@ class _CreatorFormPageState extends State<CreatorFormPage>
       ),
       body: AnimatedBuilder(
         animation: _animationController,
-        builder: (context, child) {
-          return FadeTransition(
-            opacity: _fadeAnimation,
-            child: SlideTransition(position: _slideAnimation, child: child),
-          );
-        },
+        builder: (context, child) => FadeTransition(
+          opacity: _fadeAnimation,
+          child: SlideTransition(position: _slideAnimation, child: child),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Form(
@@ -211,24 +195,18 @@ class _CreatorFormPageState extends State<CreatorFormPage>
                   controller: _nameController,
                   label: 'Full Name',
                   icon: Icons.person,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter a name';
-                    }
-                    return null;
-                  },
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Please enter a name'
+                      : null,
                 ),
                 const SizedBox(height: 20),
                 _buildTextField(
                   controller: _designationController,
                   label: 'Designation',
                   icon: Icons.work,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter a designation';
-                    }
-                    return null;
-                  },
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Please enter a designation'
+                      : null,
                 ),
                 const SizedBox(height: 20),
                 _buildTextField(
@@ -259,15 +237,11 @@ class _CreatorFormPageState extends State<CreatorFormPage>
                   label: 'About',
                   icon: Icons.description,
                   maxLines: 4,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter about information';
-                    }
-                    if (value.trim().length < 10) {
-                      return 'About should be at least 10 characters';
-                    }
-                    return null;
-                  },
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Please enter about information'
+                      : (v.trim().length < 10)
+                      ? 'About should be at least 10 characters'
+                      : null,
                 ),
                 const SizedBox(height: 40),
                 _buildSaveButton(),

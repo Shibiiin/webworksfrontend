@@ -47,7 +47,6 @@ class Creator {
     this.engagementRate = 0.0,
   });
 
-  // Empty creator for forms
   factory Creator.empty() {
     final now = DateTime.now();
     return Creator(
@@ -62,10 +61,8 @@ class Creator {
     );
   }
 
-  // Check if creator is empty/new
   bool get isNew => id.isEmpty;
 
-  // Convert to map for storage
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -92,12 +89,29 @@ class Creator {
     };
   }
 
-  // Create from map
+  // ✅ *** THE MAIN FIX IS IN THIS FACTORY CONSTRUCTOR ***
   factory Creator.fromMap(Map<String, dynamic> map) {
+    // Helper function to robustly parse dates that could be an integer OR a String
+    DateTime _parseDate(dynamic dateValue) {
+      if (dateValue == null) return DateTime.now();
+      // For new creators from the app (sent as int)
+      if (dateValue is int) {
+        return DateTime.fromMillisecondsSinceEpoch(dateValue);
+      }
+      // For existing creators from db.json (stored as String)
+      if (dateValue is String) {
+        return DateTime.tryParse(dateValue) ?? DateTime.now();
+      }
+      // Fallback
+      return DateTime.now();
+    }
+
     return Creator(
-      id: map['id'] ?? '',
-      name: map['name'] ?? '',
-      designation: map['designation'] ?? '',
+      id:
+          map['id']?.toString() ??
+          DateTime.now().millisecondsSinceEpoch.toString(),
+      name: map['name'] ?? 'No Name',
+      designation: map['designation'] ?? 'No Designation',
       about: map['about'] ?? '',
       profileImageUrl: map['profileImageUrl'] ?? '',
       portfolioImageUrls: List<String>.from(map['portfolioImageUrls'] ?? []),
@@ -108,12 +122,18 @@ class Creator {
       phone: map['phone'] ?? '',
       location: map['location'] ?? '',
       skills: List<String>.from(map['skills'] ?? []),
-      socialMedia: List<SocialMedia>.from(
-        (map['socialMedia'] ?? []).map((x) => SocialMedia.fromMap(x)),
-      ),
       status: map['status'] ?? 'Active',
-      joinDate: DateTime.fromMillisecondsSinceEpoch(map['joinDate'] ?? 0),
-      lastActive: DateTime.fromMillisecondsSinceEpoch(map['lastActive'] ?? 0),
+
+      // Use the robust date parsing function
+      joinDate: _parseDate(map['joinDate']),
+      lastActive: _parseDate(map['lastActive']),
+
+      // ✅ Added all other missing fields to prevent errors
+      socialMedia:
+          (map['socialMedia'] as List<dynamic>?)
+              ?.map((sm) => SocialMedia.fromMap(sm as Map<String, dynamic>))
+              .toList() ??
+          [],
       tags: List<String>.from(map['tags'] ?? []),
       likes: map['likes'] ?? 0,
       comments: map['comments'] ?? 0,
@@ -121,7 +141,6 @@ class Creator {
     );
   }
 
-  // Copy with method for immutability
   Creator copyWith({
     String? id,
     String? name,
@@ -170,7 +189,8 @@ class Creator {
     );
   }
 
-  // Helper methods...
+  // --- No changes needed below this line ---
+
   String get formattedFollowers {
     if (followers >= 1000000) {
       return '${(followers / 1000000).toStringAsFixed(1)}M';
@@ -276,113 +296,5 @@ class SocialMedia {
       default:
         return Colors.grey;
     }
-  }
-}
-
-// Sample data generator
-class CreatorSampleData {
-  static List<Creator> generateSampleCreators() {
-    return [
-      Creator(
-        id: '1',
-        name: 'Sarah Chen',
-        designation: 'UI/UX Designer',
-        about:
-            'Passionate UI/UX designer with 5+ years of experience creating beautiful and functional digital products. Specialized in mobile app design and design systems.',
-        profileImageUrl:
-            'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop&crop=face',
-        portfolioImageUrls: [
-          'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=400&h=300&fit=crop',
-          'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=300&fit=crop',
-          'https://images.unsplash.com/photo-1556656793-08538906a9f8?w=400&h=300&fit=crop',
-        ],
-        followers: 12400,
-        projects: 24,
-        rating: 4.8,
-        email: 'sarah.chen@example.com',
-        phone: '+1-555-0123',
-        location: 'San Francisco, CA',
-        skills: [
-          'UI Design',
-          'UX Research',
-          'Figma',
-          'Prototyping',
-          'Design Systems',
-        ],
-        socialMedia: [
-          SocialMedia(
-            platform: 'Instagram',
-            username: '@sarahchen',
-            url: 'https://instagram.com/sarahchen',
-            followers: 8500,
-          ),
-          SocialMedia(
-            platform: 'Twitter',
-            username: '@sarahchen_design',
-            url: 'https://twitter.com/sarahchen_design',
-            followers: 3200,
-          ),
-          SocialMedia(
-            platform: 'Dribbble',
-            username: 'sarahchen',
-            url: 'https://dribbble.com/sarahchen',
-            followers: 5400,
-          ),
-        ],
-        status: 'Active',
-        joinDate: DateTime(2022, 1, 15),
-        lastActive: DateTime.now().subtract(const Duration(hours: 2)),
-        tags: ['Top Rated', 'Pro Designer', 'Fast Delivery'],
-        likes: 2450,
-        comments: 356,
-        engagementRate: 4.5,
-      ),
-      Creator(
-        id: '2',
-        name: 'Alex Rodriguez',
-        designation: 'Illustrator & Artist',
-        about:
-            'Digital artist and illustrator specializing in character design and fantasy art. Bringing imagination to life through vibrant colors and detailed illustrations.',
-        profileImageUrl:
-            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face',
-        portfolioImageUrls: [
-          'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400&h=300&fit=crop',
-          'https://images.unsplash.com/photo-1579546929662-711aa81148cf?w=400&h=300&fit=crop',
-        ],
-        followers: 8700,
-        projects: 18,
-        rating: 4.9,
-        email: 'alex.rodriguez@example.com',
-        location: 'New York, NY',
-        skills: [
-          'Digital Illustration',
-          'Character Design',
-          'Procreate',
-          'Photoshop',
-          'Concept Art',
-        ],
-        socialMedia: [
-          SocialMedia(
-            platform: 'Instagram',
-            username: '@alexart',
-            url: 'https://instagram.com/alexart',
-            followers: 12000,
-          ),
-          SocialMedia(
-            platform: 'Behance',
-            username: 'alexrodriguez',
-            url: 'https://behance.net/alexrodriguez',
-            followers: 4500,
-          ),
-        ],
-        status: 'Active',
-        joinDate: DateTime(2022, 3, 10),
-        lastActive: DateTime.now().subtract(const Duration(days: 1)),
-        tags: ['Character Design', 'Fantasy Art'],
-        likes: 1870,
-        comments: 289,
-        engagementRate: 4.7,
-      ),
-    ];
   }
 }

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../domain/entities/creator.dart';
 import '../manager/dashboard_controller.dart';
 import '../widget/animated_card.dart';
-import '../widget/creator_form_page.dart';
-import '../widget/creator_widget.dart';
+import '../widget/creator_card_widget.dart';
 
 class CreatorListPage extends StatefulWidget {
   const CreatorListPage({super.key});
@@ -34,17 +34,13 @@ class _CreatorListPageState extends State<CreatorListPage>
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<DashboardController>(
+      final viewModel = Provider.of<DashboardController>(
         context,
         listen: false,
-      ).fetchCreators().then((_) {
-        if (mounted) {
-          Provider.of<DashboardController>(
-            context,
-            listen: false,
-          ).sortCreators(_selectedSort);
-        }
-      });
+      );
+      if (viewModel.creators.isEmpty) {
+        viewModel.fetchCreators();
+      }
       _animationController.forward();
     });
   }
@@ -109,10 +105,9 @@ class _CreatorListPageState extends State<CreatorListPage>
     );
   }
 
-  List<Creator> _getFilteredCreators(DashboardController viewModel) {
-    List<Creator> processedList = List.from(viewModel.creators);
+  List<Creator> _getProcessedCreators(List<Creator> originalCreators) {
+    List<Creator> processedList = List.from(originalCreators);
 
-    // Apply search filter
     if (_searchController.text.isNotEmpty) {
       final query = _searchController.text.toLowerCase();
       processedList = processedList
@@ -124,11 +119,20 @@ class _CreatorListPageState extends State<CreatorListPage>
           .toList();
     }
 
-    // Apply status filter
     if (_selectedFilter != 'All') {
       processedList = processedList
           .where((creator) => creator.status == _selectedFilter)
           .toList();
+    }
+
+    switch (_selectedSort) {
+      case 'name':
+        processedList.sort((a, b) => a.name.compareTo(b.name));
+        break;
+      case 'followers':
+        processedList.sort((a, b) => b.followers.compareTo(a.followers));
+        break;
+      // ... add other sort cases ...
     }
 
     return processedList;
@@ -137,7 +141,6 @@ class _CreatorListPageState extends State<CreatorListPage>
   @override
   Widget build(BuildContext context) {
     final creatorViewModel = Provider.of<DashboardController>(context);
-    final filteredCreators = _getFilteredCreators(creatorViewModel);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -154,58 +157,54 @@ class _CreatorListPageState extends State<CreatorListPage>
         elevation: 0,
         centerTitle: false,
       ),
-      body: Column(
-        children: [
-          // Search and Filter Bar
-          _buildSearchFilterBar(context),
+      body: Consumer<DashboardController>(
+        builder: (context, viewModel, child) {
+          final processedCreators = _getProcessedCreators(viewModel.creators);
+          return Column(
+            children: [
+              // Search and Filter Bar
+              _buildSearchFilterBar(context),
 
-          // Main Content
-          Expanded(
-            child:
-                creatorViewModel.isLoading && creatorViewModel.creators.isEmpty
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Color(0xFF00D4AA),
-                      ),
-                    ),
-                  )
-                : AnimatedBuilder(
-                    animation: _animationController,
-                    builder: (context, child) {
-                      return FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: Padding(
-                          padding: const EdgeInsets.all(24.0),
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: filteredCreators.isEmpty
-                        ? _buildEmptyState(creatorViewModel)
-                        : _buildCreatorsGrid(
-                            filteredCreators,
-                            creatorViewModel,
+              // Main Content
+              Expanded(
+                child:
+                    creatorViewModel.isLoading &&
+                        creatorViewModel.creators.isEmpty
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Color(0xFF00D4AA),
                           ),
-                  ),
-          ),
-        ],
+                        ),
+                      )
+                    : AnimatedBuilder(
+                        animation: _animationController,
+                        builder: (context, child) {
+                          return FadeTransition(
+                            opacity: _fadeAnimation,
+                            child: Padding(
+                              padding: const EdgeInsets.all(24.0),
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: processedCreators.isEmpty
+                            ? _buildEmptyState(creatorViewModel)
+                            : _buildCreatorsGrid(
+                                processedCreators,
+                                creatorViewModel,
+                              ),
+                      ),
+              ),
+            ],
+          );
+        },
       ),
       floatingActionButton: ScaleTransition(
         scale: _fadeAnimation,
         child: FloatingActionButton(
           onPressed: () {
-            Navigator.of(context).push(
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) {
-                  return FadeTransition(
-                    opacity: animation,
-                    child: const CreatorFormPage(),
-                  );
-                },
-                transitionDuration: const Duration(milliseconds: 600),
-              ),
-            );
+            context.push('/add-creator');
           },
           backgroundColor: const Color(0xFF00D4AA),
           foregroundColor: Colors.black,
@@ -389,17 +388,7 @@ class _CreatorListPageState extends State<CreatorListPage>
                 creator: creator,
                 onDelete: () => _showDeleteDialog(context, creator),
                 onEdit: () {
-                  Navigator.of(context).push(
-                    PageRouteBuilder(
-                      pageBuilder: (context, animation, secondaryAnimation) {
-                        return FadeTransition(
-                          opacity: animation,
-                          child: CreatorFormPage(creator: creator),
-                        );
-                      },
-                      transitionDuration: const Duration(milliseconds: 600),
-                    ),
-                  );
+                  context.push('/edit-creator/${creator.id}');
                 },
               ),
             );

@@ -1,13 +1,7 @@
-// lib/presentation/widget/creator_widget.dart
-
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../domain/entities/creator.dart';
-import '../pages/creator_details_page.dart';
-
-// The same default image URL
-const String defaultImageUrl =
-    'https://i.ibb.co/6yvC2Q2/user-profile-icon-free-vector.jpg';
 
 class CreatorCard extends StatelessWidget {
   final Creator creator;
@@ -23,6 +17,28 @@ class CreatorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Widget imageWidget;
+    if (creator.profileImageUrl.isEmpty) {
+      // If the URL is empty, use the local asset
+      imageWidget = Image.asset('assets/img/person.png', fit: BoxFit.cover);
+    } else {
+      // Otherwise, use the network image with an error fallback
+      imageWidget = Image.network(
+        creator.profileImageUrl,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, progress) => progress == null
+            ? child
+            : Container(
+                color: Colors.grey[900],
+                child: const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF00D4AA)),
+                ),
+              ),
+        errorBuilder: (context, error, stackTrace) =>
+            Image.asset('assets/img/person.png', fit: BoxFit.cover),
+      );
+    }
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: TweenAnimationBuilder(
@@ -33,17 +49,7 @@ class CreatorCard extends StatelessWidget {
         },
         child: InkWell(
           onTap: () {
-            Navigator.of(context).push(
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) {
-                  return FadeTransition(
-                    opacity: animation,
-                    child: CreatorDetailPage(creatorId: creator.id),
-                  );
-                },
-                transitionDuration: const Duration(milliseconds: 800),
-              ),
-            );
+            context.push('/creator/${creator.id}');
           },
           borderRadius: BorderRadius.circular(20),
           child: Stack(
@@ -67,32 +73,10 @@ class CreatorCard extends StatelessWidget {
                             topLeft: Radius.circular(20),
                             topRight: Radius.circular(20),
                           ),
-                          child: Image.network(
-                            creator.profileImageUrl,
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Container(
-                                color: Colors.grey[900],
-                                child: const Center(
-                                  child: CircularProgressIndicator(
-                                    color: Color(0xFF00D4AA),
-                                  ),
-                                ),
-                              );
-                            },
-                            // ✅ ADDED: Error builder to show the default image on failure
-                            errorBuilder: (context, error, stackTrace) {
-                              return Image.network(
-                                defaultImageUrl,
-                                fit: BoxFit.cover,
-                              );
-                            },
-                          ),
+                          child: imageWidget,
                         ),
                       ),
                     ),
-                    // ... THE REST OF YOUR CARD CONTENT IS PERFECT ...
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
@@ -122,8 +106,6 @@ class CreatorCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 12),
-
-                          // Stats Row
                           Row(
                             children: [
                               _buildStatItem(
@@ -152,7 +134,6 @@ class CreatorCard extends StatelessWidget {
                   ],
                 ),
               ),
-              // ... YOUR POPUPMENUBUTTON IS PERFECT ...
               Positioned(
                 top: 8,
                 right: 8,
@@ -170,11 +151,10 @@ class CreatorCard extends StatelessWidget {
                     ),
                   ),
                   onSelected: (value) {
-                    if (value == 'edit' && onEdit != null) {
+                    if (value == 'edit' && onEdit != null)
                       onEdit!();
-                    } else if (value == 'delete' && onDelete != null) {
+                    else if (value == 'delete' && onDelete != null)
                       onDelete!();
-                    }
                   },
                   itemBuilder: (BuildContext context) => [
                     const PopupMenuItem<String>(

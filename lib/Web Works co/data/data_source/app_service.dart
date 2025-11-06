@@ -15,8 +15,8 @@ class ApiService {
       BaseOptions(
         baseUrl: AppRemotesRoutes.baseUrl,
         headers: {'Content-Type': 'application/json'},
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 15),
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 30),
       ),
     ),
   );
@@ -30,7 +30,7 @@ class ApiService {
       successPrint("Creators details Loaded ${response.data}");
       return data.map((json) => Creator.fromMap(json)).toList();
     } on DioException catch (e) {
-      print("Error fetching creators: $e");
+      errorPrint("Error fetching creators: $e");
       throw Exception('Failed to load creators');
     }
   }

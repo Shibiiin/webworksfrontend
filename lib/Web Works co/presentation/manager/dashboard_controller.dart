@@ -1,6 +1,8 @@
 // lib/presentation/manager/dashboard_controller.dart
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:webworksco/Web%20Works%20co/presentation/widget/custom_print.dart';
 
 import '../../data/data_source/app_service.dart';
 import '../../domain/entities/creator.dart';
@@ -60,49 +62,58 @@ class DashboardController extends ChangeNotifier {
   }
 
   Future<bool> addCreator(Creator creator) async {
-    // No change needed here, it was already correct.
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
     try {
+      // DEBUG: Print the exact data being sent to the server
+      print("--- SENDING DATA TO CREATE ---");
+      print(creator.toMap());
+
       final newCreator = await _apiService.createCreator(creator.toMap());
       _creators.insert(0, newCreator);
+      notifyListeners();
       return true;
     } catch (e) {
-      _error = 'Failed to add creator: $e';
-      return false;
-    } finally {
-      _isLoading = false;
+      // ✅ CRITICAL DEBUG STEP: Print the full error
+      errorPrint("--- FAILED TO CREATE CREATOR ---");
+      errorPrint("Error: $e");
+      if (e is DioException) {
+        errorPrint("Dio Response: ${e.response}");
+      }
+
+      _error = 'Failed to add creator.'; // Simpler error message
       notifyListeners();
+      return false;
     }
   }
 
   Future<bool> updateCreator(Creator updatedCreator) async {
-    // No change needed here, it was already correct.
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
     try {
+      // DEBUG: Print the exact data being sent to the server
+      alertPrint("--- SENDING DATA TO UPDATE ---");
+      alertPrint('Data ${updatedCreator.toMap()}');
+
       final returnedCreator = await _apiService.updateCreator(
         updatedCreator.id,
         updatedCreator.toMap(),
       );
-      final index = _creators.indexWhere(
-        (creator) => creator.id == returnedCreator.id,
-      );
+      final index = _creators.indexWhere((c) => c.id == returnedCreator.id);
       if (index != -1) {
         _creators[index] = returnedCreator;
         if (_selectedCreator?.id == returnedCreator.id) {
           _selectedCreator = returnedCreator;
         }
+        notifyListeners();
       }
       return true;
     } catch (e) {
-      _error = 'Failed to update creator: $e';
-      return false;
-    } finally {
-      _isLoading = false;
+      errorPrint("--- FAILED TO UPDATE CREATOR ---");
+      errorPrint("Error: $e");
+      if (e is DioException) {
+        errorPrint("Dio Response: ${e.response}");
+      }
+
+      _error = 'Failed to update creator.';
       notifyListeners();
+      return false;
     }
   }
 
@@ -172,5 +183,13 @@ class DashboardController extends ChangeNotifier {
         break;
     }
     notifyListeners();
+  }
+
+  Creator? getCreatorById(String id) {
+    try {
+      return _creators.firstWhere((creator) => creator.id == id);
+    } catch (e) {
+      return null;
+    }
   }
 }

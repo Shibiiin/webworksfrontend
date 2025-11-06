@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../domain/entities/creator.dart';
@@ -87,7 +88,7 @@ class _CreatorDetailPageState extends State<CreatorDetailPage>
 
                 if (success && mounted) {
                   // After successful deletion, pop the detail page to return to the list
-                  Navigator.of(context).pop();
+                  context.pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       backgroundColor: Colors.green,
@@ -132,9 +133,7 @@ class _CreatorDetailPageState extends State<CreatorDetailPage>
             ),
             child: const Icon(Icons.arrow_back, color: Colors.white),
           ),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
+          onPressed: () => context.pop(),
         ),
         actions: [
           IconButton(
@@ -168,292 +167,323 @@ class _CreatorDetailPageState extends State<CreatorDetailPage>
           const SizedBox(width: 8),
         ],
       ),
-      body: creatorViewModel.isLoading || creator == null
-          ? const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00D4AA)),
-              ),
-            )
-          : AnimatedBuilder(
-              animation: _animationController,
-              builder: (context, child) {
-                return FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: Transform.translate(
-                    offset: Offset(0, _slideAnimation.value),
-                    child: child,
+      body: Consumer(
+        builder: (context, value, child) {
+          Widget profileImageWidget;
+          if (creator != null && creator.profileImageUrl.isNotEmpty) {
+            profileImageWidget = Image.network(
+              creator.profileImageUrl,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, progress) => progress == null
+                  ? child
+                  : const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF00D4AA),
+                      ),
+                    ),
+              errorBuilder: (context, error, stackTrace) =>
+                  Image.asset('assets/img/person.png', fit: BoxFit.cover),
+            );
+          } else {
+            // Default to the asset if creator is null or URL is empty
+            profileImageWidget = Image.asset(
+              'assets/img/person.png',
+              fit: BoxFit.cover,
+            );
+          }
+
+          return creatorViewModel.isLoading || creator == null
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Color(0xFF00D4AA),
+                    ),
                   ),
-                );
-              },
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Profile Header with Hero (slower animation)
-                    Center(
-                      child: Column(
-                        children: [
-                          Hero(
-                            tag: 'profile_image_${creator.id}',
-                            flightShuttleBuilder:
-                                (
-                                  flightContext,
-                                  animation,
-                                  flightDirection,
-                                  fromHeroContext,
-                                  toHeroContext,
-                                ) {
-                                  return AnimatedBuilder(
-                                    animation: animation,
-                                    builder: (context, child) {
-                                      return Material(
-                                        color: Colors.transparent,
-                                        child: Opacity(
-                                          opacity: animation.value,
-                                          child: child,
+                )
+              : AnimatedBuilder(
+                  animation: _animationController,
+                  builder: (context, child) {
+                    return FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: Transform.translate(
+                        offset: Offset(0, _slideAnimation.value),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Profile Header with Hero (slower animation)
+                        Center(
+                          child: Column(
+                            children: [
+                              Hero(
+                                tag: 'profile_image_${creator.id}',
+                                flightShuttleBuilder:
+                                    (
+                                      flightContext,
+                                      animation,
+                                      flightDirection,
+                                      fromHeroContext,
+                                      toHeroContext,
+                                    ) {
+                                      return AnimatedBuilder(
+                                        animation: animation,
+                                        builder: (context, child) {
+                                          return Material(
+                                            color: Colors.transparent,
+                                            child: Opacity(
+                                              opacity: animation.value,
+                                              child: child,
+                                            ),
+                                          );
+                                        },
+                                        child: Container(
+                                          width: 140,
+                                          height: 140,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: const Color(0xFF00D4AA),
+                                              width: 3,
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: const Color(
+                                                  0xFF00D4AA,
+                                                ).withOpacity(0.3),
+                                                blurRadius: 20,
+                                                offset: const Offset(0, 10),
+                                              ),
+                                            ],
+                                          ),
+                                          child: ClipOval(
+                                            child: Image.network(
+                                              creator.profileImageUrl,
+                                              fit: BoxFit.cover,
+                                              loadingBuilder:
+                                                  (
+                                                    context,
+                                                    child,
+                                                    loadingProgress,
+                                                  ) {
+                                                    if (loadingProgress == null)
+                                                      return child;
+                                                    return const Center(
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                            color: Color(
+                                                              0xFF00D4AA,
+                                                            ),
+                                                          ),
+                                                    );
+                                                  },
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                    return Image.asset(
+                                                      'assets/images/default_avatar.jpg',
+                                                      fit: BoxFit.cover,
+                                                    );
+                                                  },
+                                            ),
+                                          ),
                                         ),
                                       );
                                     },
-                                    child: Container(
-                                      width: 140,
-                                      height: 140,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: const Color(0xFF00D4AA),
-                                          width: 3,
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: const Color(
-                                              0xFF00D4AA,
-                                            ).withOpacity(0.3),
-                                            blurRadius: 20,
-                                            offset: const Offset(0, 10),
-                                          ),
-                                        ],
-                                      ),
-                                      child: ClipOval(
-                                        child: Image.network(
-                                          creator.profileImageUrl,
-                                          fit: BoxFit.cover,
-                                          loadingBuilder:
-                                              (
-                                                context,
-                                                child,
-                                                loadingProgress,
-                                              ) {
-                                                if (loadingProgress == null)
-                                                  return child;
-                                                return const Center(
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                        color: Color(
-                                                          0xFF00D4AA,
-                                                        ),
-                                                      ),
-                                                );
-                                              },
-                                          errorBuilder:
-                                              (context, error, stackTrace) {
-                                                return Image.asset(
-                                                  'assets/images/default_avatar.jpg',
-                                                  fit: BoxFit.cover,
-                                                );
-                                              },
-                                        ),
-                                      ),
+                                child: Container(
+                                  width: 140,
+                                  height: 140,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: const Color(0xFF00D4AA),
+                                      width: 3,
                                     ),
-                                  );
-                                },
-                            child: Container(
-                              width: 140,
-                              height: 140,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: const Color(0xFF00D4AA),
-                                  width: 3,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(
+                                          0xFF00D4AA,
+                                        ).withOpacity(0.3),
+                                        blurRadius: 20,
+                                        offset: const Offset(0, 10),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipOval(
+                                    child: Image.network(
+                                      creator.profileImageUrl,
+                                      fit: BoxFit.cover,
+                                      loadingBuilder:
+                                          (context, child, loadingProgress) {
+                                            if (loadingProgress == null)
+                                              return child;
+                                            return Center(
+                                              child: CircularProgressIndicator(
+                                                value:
+                                                    loadingProgress
+                                                            .expectedTotalBytes !=
+                                                        null
+                                                    ? loadingProgress
+                                                              .cumulativeBytesLoaded /
+                                                          loadingProgress
+                                                              .expectedTotalBytes!
+                                                    : null,
+                                                color: const Color(0xFF00D4AA),
+                                              ),
+                                            );
+                                          },
+                                    ),
+                                  ),
                                 ),
-                                boxShadow: [
-                                  BoxShadow(
+                              ),
+                              const SizedBox(height: 24),
+
+                              // Name with word-by-word animation
+                              AnimatedText(
+                                text: creator.name,
+                                style: const TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  fontFamily: 'Inter',
+                                ),
+                                duration: const Duration(milliseconds: 800),
+                              ),
+                              const SizedBox(height: 8),
+
+                              // Designation with word-by-word animation
+                              AnimatedText(
+                                text: creator.designation,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.grey[400],
+                                  fontWeight: FontWeight.w500,
+                                  fontFamily: 'Inter',
+                                ),
+                                duration: const Duration(milliseconds: 600),
+                                delay: const Duration(milliseconds: 400),
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Stats Row
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 32,
+                                  vertical: 20,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1A1A1A),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: Colors.grey[800]!),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
+                                  children: [
+                                    _buildDetailStat(
+                                      'Followers',
+                                      creator.formattedFollowers,
+                                    ),
+                                    _buildDetailStat(
+                                      'Projects',
+                                      '${creator.projects}',
+                                    ),
+                                    _buildDetailStat(
+                                      'Rating',
+                                      creator.rating.toStringAsFixed(1),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 40),
+
+                        // About Section with word-by-word animation
+                        _buildSection(
+                          title: 'About',
+                          child: AnimatedText(
+                            text: creator.about,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              height: 1.6,
+                              color: Colors.white70,
+                              fontFamily: 'Inter',
+                            ),
+                            duration: const Duration(milliseconds: 1500),
+                            delay: const Duration(milliseconds: 600),
+                          ),
+                        ),
+
+                        const SizedBox(height: 40),
+
+                        // Skills Section
+                        _buildSection(
+                          title: 'Skills',
+                          child: Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: creator.topSkills.map((skill) {
+                              return Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFF00D4AA,
+                                  ).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
                                     color: const Color(
                                       0xFF00D4AA,
                                     ).withOpacity(0.3),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 10),
                                   ),
-                                ],
-                              ),
-                              child: ClipOval(
-                                child: Image.network(
-                                  creator.profileImageUrl,
-                                  fit: BoxFit.cover,
-                                  loadingBuilder:
-                                      (context, child, loadingProgress) {
-                                        if (loadingProgress == null)
-                                          return child;
-                                        return Center(
-                                          child: CircularProgressIndicator(
-                                            value:
-                                                loadingProgress
-                                                        .expectedTotalBytes !=
-                                                    null
-                                                ? loadingProgress
-                                                          .cumulativeBytesLoaded /
-                                                      loadingProgress
-                                                          .expectedTotalBytes!
-                                                : null,
-                                            color: const Color(0xFF00D4AA),
-                                          ),
-                                        );
-                                      },
                                 ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Name with word-by-word animation
-                          AnimatedText(
-                            text: creator.name,
-                            style: const TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                              fontFamily: 'Inter',
-                            ),
-                            duration: const Duration(milliseconds: 800),
-                          ),
-                          const SizedBox(height: 8),
-
-                          // Designation with word-by-word animation
-                          AnimatedText(
-                            text: creator.designation,
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.grey[400],
-                              fontWeight: FontWeight.w500,
-                              fontFamily: 'Inter',
-                            ),
-                            duration: const Duration(milliseconds: 600),
-                            delay: const Duration(milliseconds: 400),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Stats Row
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 32,
-                              vertical: 20,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1A1A1A),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.grey[800]!),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                _buildDetailStat(
-                                  'Followers',
-                                  creator.formattedFollowers,
+                                child: Text(
+                                  skill,
+                                  style: const TextStyle(
+                                    color: Color(0xFF00D4AA),
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
-                                _buildDetailStat(
-                                  'Projects',
-                                  '${creator.projects}',
-                                ),
-                                _buildDetailStat(
-                                  'Rating',
-                                  creator.rating.toStringAsFixed(1),
-                                ),
-                              ],
-                            ),
+                              );
+                            }).toList(),
                           ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    // About Section with word-by-word animation
-                    _buildSection(
-                      title: 'About',
-                      child: AnimatedText(
-                        text: creator.about,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          height: 1.6,
-                          color: Colors.white70,
-                          fontFamily: 'Inter',
                         ),
-                        duration: const Duration(milliseconds: 1500),
-                        delay: const Duration(milliseconds: 600),
-                      ),
-                    ),
 
-                    const SizedBox(height: 40),
+                        const SizedBox(height: 40),
 
-                    // Skills Section
-                    _buildSection(
-                      title: 'Skills',
-                      child: Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        children: creator.topSkills.map((skill) {
-                          return Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF00D4AA).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: const Color(0xFF00D4AA).withOpacity(0.3),
-                              ),
-                            ),
-                            child: Text(
-                              skill,
-                              style: const TextStyle(
-                                color: Color(0xFF00D4AA),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    // Portfolio Section
-                    _buildSection(
-                      title: 'Portfolio',
-                      child: GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 3,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                            ),
-                        itemCount: creator.portfolioImageUrls.length,
-                        itemBuilder: (context, index) {
-                          return AnimatedContainer(
-                            duration: Duration(
-                              milliseconds: 600 + (index * 200),
-                            ),
-                            curve: Curves.easeOut,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.network(
-                                creator.portfolioImageUrls[index],
-                                fit: BoxFit.cover,
-                                loadingBuilder:
-                                    (context, child, loadingProgress) {
+                        // Portfolio Section
+                        _buildSection(
+                          title: 'Portfolio',
+                          child: GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 3,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                ),
+                            itemCount: creator.portfolioImageUrls.length,
+                            itemBuilder: (context, index) {
+                              return AnimatedContainer(
+                                duration: Duration(
+                                  milliseconds: 600 + (index * 200),
+                                ),
+                                curve: Curves.easeOut,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.network(
+                                    creator.portfolioImageUrls[index],
+                                    fit: BoxFit.cover,
+                                    loadingBuilder: (context, child, loadingProgress) {
                                       if (loadingProgress == null) return child;
                                       return Container(
                                         color: Colors.grey[900],
@@ -473,16 +503,18 @@ class _CreatorDetailPageState extends State<CreatorDetailPage>
                                         ),
                                       );
                                     },
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            ),
+                  ),
+                );
+        },
+      ),
     );
   }
 
